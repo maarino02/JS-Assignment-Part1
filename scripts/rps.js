@@ -11,8 +11,8 @@
     };
     const DIALOG = {
         introduction: "Ah, a new challenger, come to best me! Well, if you can win 3 times at the humble game of rock, paper, scissors, perhaps I may yield... Simply answer here when I ask you to.",
-        requestInput: "Go ahead, choose 'rock', 'paper', or 'scissors'. Or you can choose 'random' and let me choose for you... See if you can beat me...",
-        badInput: "I do not know what you are saying, please just choose either 'rock', 'paper', or 'scissors'...",
+        requestInput: "Go ahead, choose 'rock', 'paper', or 'scissors'. Or you can choose 'random' and let me choose for you... See if you can beat me... Or maybe you want to 'quit'?",
+        badInput: "I do not know what you are saying...",
         enemyAnnouncement: "And I shall choose...",
         playerWin: "Drat, you won that one...",
         enemyWin: "HAHA, I WIN AGAIN!",
@@ -22,6 +22,7 @@
         replayAfterPlayerWin: "No! Let me try again! You must have cheated!",
         exitAfterEnemyWin: "Heh, I don't blame you after such a miserable defeat!",
         exitAfterPlayerWin: "Blast... Fine, you get away this time... But I will return! You'll see!",
+        playerQuit: "Oh, leaving already? Can't say I blame you...",
         roundDrawResponses: [
             "The next one will get you",
             "How did you know...",
@@ -61,6 +62,8 @@
 
         enemyCanCheat = true;
         enemyCheatChance = 10;
+
+        gameInProgress = true;
 
         // Text output
         speak(message) {
@@ -126,6 +129,11 @@
             }
         }
 
+        // Presented after player quits
+        quitSpeech() {
+            this.speak(DIALOG.playerQuit);
+        }
+
         // Random selection
         selectRandom() {
             return OPTIONS[this.randomNumber(OPTIONS.length)];
@@ -162,6 +170,10 @@
                     break;
                 case "random":
                     this.playerChoice = this.selectRandom();
+                    this.speak(`Very well, I shall for choose for you... ${this.titleCase(this.playerChoice)}!`);
+                    break;
+                case "quit":
+                    this.gameInProgress = false;
                     break;
                 default:
                     this.speak(DIALOG.badInput);
@@ -202,6 +214,9 @@
                     hasInput = this.parseUserInput(
                         this.sanitiseInput(userInput)
                     );
+                } else {
+                    this.gameInProgress = false;
+                    break;
                 }
 
                 if (this.playerChoice !== null) {
@@ -254,13 +269,17 @@
             this.enemyScore = 0;
             this.playerChoice = null;
             this.enemyChoice = null;
+            this.gameInProgress = true;
         }
 
         // Play a round
         playRound() {
             this.processUserInput();
-            this.computerPlay();
-            this.processScoring();
+
+            if (this.gameInProgress) {
+                this.computerPlay();
+                this.processScoring();
+            }
         }
 
         // Run the game
@@ -270,11 +289,19 @@
 
             this.introduction();
             
-            while (retry) {
+            retryLoop: while (retry) {
+                this.reset();
                 isOver = false;
 
                 while (!isOver) {
                     this.playRound();
+
+                    if (!this.gameInProgress) {
+                        this.quitSpeech();
+                        this.enemyCompleteWin = true;
+                        break retryLoop;
+                    }
+
                     isOver = this.checkWinCondition();
         
                     if (isOver) {
