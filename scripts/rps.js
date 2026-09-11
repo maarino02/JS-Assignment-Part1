@@ -298,7 +298,6 @@
 
                     if (!this.gameInProgress) {
                         this.quitSpeech();
-                        this.enemyCompleteWin = true;
                         break retryLoop;
                     }
 
